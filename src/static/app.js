@@ -13,6 +13,9 @@ document.addEventListener("DOMContentLoaded", () => {
       // Clear loading message
       activitiesList.innerHTML = "";
 
+      // Ensure select is empty before populating (avoid duplicates on re-fetch)
+      activitySelect.innerHTML = '<option value="">-- Select an activity --</option>';
+
       // Populate activities list
       Object.entries(activities).forEach(([name, details]) => {
         const activityCard = document.createElement("div");
@@ -20,11 +23,24 @@ document.addEventListener("DOMContentLoaded", () => {
 
         const spotsLeft = details.max_participants - details.participants.length;
 
+        // Construire le HTML de la liste des participants
+        const participants = Array.isArray(details.participants) ? details.participants : [];
+        let participantsHTML = "";
+        if (participants.length === 0) {
+          participantsHTML = `<p class="info" style="margin-top:8px;">Aucun participant pour le moment.</p>`;
+        } else {
+          const items = participants
+            .map((p) => `<li><span class="participant-badge">${escapeHtml(String(p))}</span></li>`)
+            .join("");
+          participantsHTML = `<div class="participants"><strong>Participants:</strong><ul class="participants-list">${items}</ul></div>`;
+        }
+
         activityCard.innerHTML = `
-          <h4>${name}</h4>
-          <p>${details.description}</p>
-          <p><strong>Schedule:</strong> ${details.schedule}</p>
+          <h4>${escapeHtml(name)}</h4>
+          <p>${escapeHtml(details.description)}</p>
+          <p><strong>Schedule:</strong> ${escapeHtml(details.schedule)}</p>
           <p><strong>Availability:</strong> ${spotsLeft} spots left</p>
+          ${participantsHTML}
         `;
 
         activitiesList.appendChild(activityCard);
@@ -80,6 +96,16 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error("Error signing up:", error);
     }
   });
+
+  // Helper to escape HTML when injecting text
+  function escapeHtml(str) {
+    return str
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
 
   // Initialize app
   fetchActivities();
